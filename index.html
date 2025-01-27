@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Firework For 奈奈</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <canvas id="fireworks"></canvas>
+
+  <script>
+    // 获取画布和上下文
+    const canvas = document.getElementById('fireworks');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    // 处理窗口调整大小
+    window.addEventListener('resize', () => {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight;
+    });
+
+    // 烟花粒子类
+    class Particle {
+      constructor(x, y, colors, isFullFrequency) {
+        this.x = x;
+        this.y = y;
+
+        // 随机化粒子大小
+        this.radius = Math.random() * 3 + 1;
+
+        // 随机化粒子的形状（圆形或椭圆形）
+        this.shape = Math.random() > 0.5 ? 'circle' : 'ellipse'; 
+
+        this.color = colors[Math.floor(Math.random() * colors.length)];
+        const speedFactor = isFullFrequency ? 1.5 : 1; 
+        this.speedX = Math.random() * 6 * speedFactor - 3;
+        this.speedY = Math.random() * 6 * speedFactor - 3;
+        this.alpha = 1;
+        this.alphaDecay = Math.random() * 0.02 + 0.01; 
+      }
+
+      draw() {
+        // 绘制光晕
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 2, 0, Math.PI * 2); 
+        ctx.fillStyle = 'rgba(255, 165, 0, 0.2)';
+        ctx.fill();
+
+        // 绘制粒子的渐变效果
+        const gradient = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, this.radius);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
+        gradient.addColorStop(0.5, this.color);
+        gradient.addColorStop(1, 'rgba(255, 0, 0, 0)');
+        ctx.fillStyle = gradient;
+
+        ctx.beginPath();
+        if (this.shape === 'ellipse') {
+          // 绘制椭圆形
+          const ellipseWidth = this.radius * 1.5; // 椭圆宽度
+          ctx.ellipse(this.x, this.y, ellipseWidth, this.radius, 0, 0, Math.PI * 2);
+        } else {
+          // 绘制圆形
+          ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        }
+        ctx.fill();
+      }
+
+      update() {
+        this.x += this.speedX;
+        this.y += this.speedY;
+        this.alpha -= this.alphaDecay;
+      }
+    }
+
+    let particles = [];
+
+    function createFirework(x, y, isFullFrequency = false) {
+      const colorPalettes = [
+        ['#ff7675', '#ffeaa7', '#fd79a8', '#74b9ff'],
+        ['#f39c12', '#e67e22', '#d35400', '#c0392b'],
+        ['#55efc4', '#00cec9', '#0984e3', '#a29bfe'],
+        ['#1abc9c', '#2ecc71', '#3498db', '#9b59b6'],
+      ];
+
+      const colors = colorPalettes[Math.floor(Math.random() * colorPalettes.length)];
+
+      const particleCount = 100;
+      for (let i = 0; i < particleCount; i++) {
+        particles.push(new Particle(x, y, colors, isFullFrequency));
+      }
+    }
+
+    let isMusicPlayed = false;
+    let clickCount = 0; 
+
+    canvas.addEventListener('click', (e) => {
+      clickCount++;
+
+      const isFullFrequency = clickCount % 5 === 0;
+
+      if (!isMusicPlayed && !isFullFrequency) {
+        const music = new Audio('music.mp3');
+        music.play();
+        isMusicPlayed = true;
+      }
+
+      const fireworkSound = new Audio('firework1.mp3');
+      fireworkSound.play();
+
+      if (isFullFrequency) {
+        for (let i = 0; i < 5; i++) {  
+          const randomX = Math.random() * canvas.width;
+          const randomY = Math.random() * canvas.height;
+          createFirework(randomX, randomY, true);
+        }
+      } else {
+        createFirework(e.clientX, e.clientY);
+      }
+
+      if (clickCount % 5 === 0) {
+        clickCount = 0;
+      }
+    });
+
+    function animate() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      particles = particles.filter(p => p.alpha > 0);
+      particles.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      requestAnimationFrame(animate);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
